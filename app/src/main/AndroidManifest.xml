@@ -1,9 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- The update channel saves the APK into public Downloads, where a file manager can reach
-         it; mrowser never installs it, so there is no REQUEST_INSTALL_PACKAGES here. Scoped
-         storage makes this free from API 29, hence the cap. -->
+    <!-- Favorite export uses public Downloads on API 28 and below; scoped storage handles newer
+         versions. The browser does not request package-install permission. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <!-- Package visibility (API 30+): without this, resolving the favorites-import picker returns

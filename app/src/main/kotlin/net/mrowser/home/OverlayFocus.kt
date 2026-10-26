@@ -1,7 +1,7 @@
 package net.mrowser.home
 
 /**
- * Pure focus-recovery rule for the three overlays and the page behind them.
+ * Pure focus-recovery rule for the two overlays and the page behind them.
  *
  * D-pad focus search is window-global and the root layout's first focusable child
  * is [net.mrowser.web.CursorLayout], so whenever something destroys the focused
@@ -14,7 +14,7 @@ package net.mrowser.home
 object OverlayFocus {
 
     /** A view tree D-pad focus can sit in. [NONE] is "nothing focused at all". */
-    enum class Zone { SETTINGS, HISTORY, HOME, PAGE, NONE }
+    enum class Zone { SETTINGS, HOME, PAGE, NONE }
 
     /**
      * The zone that should own focus for what is on screen, or null when [focus]
@@ -25,13 +25,11 @@ object OverlayFocus {
      */
     fun recoveryTarget(
         settingsVisible: Boolean,
-        historyVisible: Boolean,
         homeVisible: Boolean,
         focus: Zone
     ): Zone? {
         val owner = when {
             settingsVisible -> Zone.SETTINGS
-            historyVisible -> Zone.HISTORY
             homeVisible -> Zone.HOME
             else -> Zone.PAGE
         }

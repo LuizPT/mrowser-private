@@ -34,7 +34,6 @@
 
     <!-- Screens. -->
     <color name="card_title">#FFCFC9C8</color>
-    <color name="update_pill">#E61C1A1A</color>
     <color name="switch_track_off">#FF3A3535</color>
     <color name="switch_track_off_focused">#FF5A5353</color>
     <color name="switch_knob_off">#FFBDB6B5</color>

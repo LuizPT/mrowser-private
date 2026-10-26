@@ -29,7 +29,7 @@ class ChromeVisibilityTest {
         assertEquals(State.HIDDEN, ChromeVisibility.reduce(State.HIDDEN, Event.Dismissed))
     }
 
-    // An overlay (home, history, settings) is opening over the page: a bar left visible under
+    // An overlay (home or settings) is opening over the page: a bar left visible under
     // it stays in the window-global focus search and pulls D-pad focus out from behind it.
     @Test fun `dismissal hides a visible bar`() {
         assertEquals(State.HIDDEN, ChromeVisibility.reduce(State.VISIBLE, Event.Dismissed))

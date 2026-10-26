@@ -2,15 +2,17 @@ package net.mrowser.data
 
 import android.util.Log
 import java.io.File
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
 /** FavoritesRepository backed by a JSON file; pure logic delegated to FavoritesOps/FavoritesJson. */
-class JsonFavoritesStore(private val file: File) : FavoritesRepository {
+class JsonFavoritesStore(
+    private val file: File,
+    private val io: Executor = Executors.newSingleThreadExecutor()
+) : FavoritesRepository {
 
     private var items: List<Favorite> =
         if (file.exists()) FavoritesJson.fromJson(file.readText()) else emptyList()
-
-    private val io = Executors.newSingleThreadExecutor()
 
     override fun findAll(): List<Favorite> = items
 

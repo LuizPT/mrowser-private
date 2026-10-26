@@ -99,13 +99,13 @@
     <div class="mark" aria-hidden="true">
       <svg width="38" height="38" viewBox="0 0 108 108"><path fill="#e50914" d="M40 30 L78 54 L40 78 Z"/></svg>
     </div>
-    <h1>mrowser</h1>
-    <p class="tag">Watch video from websites your TV has no app for — in a real player, properly in sync.</p>
+    <h1>mrowser Private</h1>
+    <p class="tag">An Android TV browser that keeps no local visit history and still plays video in sync.</p>
     <div class="cta">
-      <a class="btn primary" href="https://github.com/m-salehi-v/mrowser/releases/latest">Download the APK</a>
-      <a class="btn" href="https://github.com/m-salehi-v/mrowser">Source on GitHub</a>
+      <a class="btn primary" href="#install">Build the private APK</a>
+      <a class="btn" href="https://github.com/m-salehi-v/mrowser/tree/v1.4.0">Upstream v1.4.0</a>
     </div>
-    <p class="meta"><span>MIT licensed</span><span>Android 6.0+</span><span>No Play Services</span><span>One permission: INTERNET</span></p>
+    <p class="meta"><span>MIT licensed</span><span>Android 6.0+</span><span>No Play Services</span><span>Separate package: net.mrowser.private</span></p>
   </div>
 </header>
 
@@ -131,7 +131,7 @@
 
 <section>
   <div class="wrap">
-    <h2>What mrowser does about it</h2>
+    <h2>What mrowser Private does about it</h2>
     <div class="grid">
       <div>
         <h3>The page's video, played properly</h3>
@@ -151,7 +151,7 @@
       </div>
       <div>
         <h3>It leaves and comes back cleanly</h3>
-        <p>BACK drops you onto the page exactly where you left it, and the play chip takes you straight back into the video. Favourites grid, browsing history, HTML5 fullscreen, and an address bar that opens on a held BACK for remotes with no MENU key. It registers as a browser too, so links from other apps can open here.</p>
+        <p>BACK drops you onto the page exactly where you left it, and the play chip takes you straight back into the video. The favourites grid, an in-memory back stack for the current session, HTML5 fullscreen, and an address bar that opens on a held BACK for remotes with no MENU key. It registers as a browser too, so links from other apps can open here.</p>
       </div>
       <div>
         <h3>Ads and pop-unders, refused</h3>
@@ -159,7 +159,7 @@
       </div>
       <div>
         <h3>Small, quiet, and yours</h3>
-        <p>One permission: INTERNET. No Play Services, no accounts, no analytics, no telemetry. Plain Kotlin, no Compose beyond Media3, a single module — light enough for weak TV boxes.</p>
+        <p>No Play Services, no analytics, no telemetry, and no local visit-history list. Plain Kotlin, no Compose beyond Media3, a single module — light enough for weak TV boxes.</p>
       </div>
     </div>
   </div>
@@ -174,8 +174,8 @@
     </figure>
     <div class="shots">
       <figure>
-        <img src="screenshots/home.png" alt="mrowser home screen: address bar, History and Settings buttons, and a favourites grid" loading="lazy" width="1280" height="720">
-        <figcaption>The launcher: address bar, favourites grid, History and Settings — all D-pad reachable.</figcaption>
+        <img src="screenshots/home.png" alt="mrowser Private home screen: address bar, Settings button, and a favourites grid" loading="lazy" width="1280" height="720">
+        <figcaption>The launcher: address bar, favourites grid, and Settings — all D-pad reachable.</figcaption>
       </figure>
       <figure>
         <img src="screenshots/player-sub-sync.png" alt="mrowser native player with the sub-sync box showing CC and subtitle offset controls over a playing stream" loading="lazy" width="1280" height="720">
@@ -196,7 +196,7 @@
         <tr><td>OK long-press</td><td>Switch between cursor mode and focus mode</td></tr>
         <tr><td>D-pad held at the screen edge</td><td>Scroll at the cursor — so a cookie dialog with its own scrollbar scrolls too</td></tr>
         <tr><td>MENU <em>or</em> BACK held</td><td>Open the address bar — the hold is for remotes with no MENU key</td></tr>
-        <tr><td>BACK tapped</td><td>Address bar → page history → close page → home</td></tr>
+        <tr><td>BACK tapped</td><td>Address bar → current-session back stack → close page → home</td></tr>
         <tr><td>− / + in the player</td><td>Shift subtitle timing by 0.5s, live, with no rebuffer</td></tr>
       </tbody>
     </table>
@@ -207,22 +207,21 @@
   <div class="wrap">
     <h2>Install</h2>
     <ol>
-      <li>Download <code>app-release.apk</code> from the <a href="https://github.com/m-salehi-v/mrowser/releases/latest">latest release</a>.</li>
+      <li>Build <code>app/build/outputs/apk/release/app-release.apk</code> from this source tree using its private signing key.</li>
       <li>Get it onto the TV with a USB stick, a sideload helper such as Downloader or “Send files to TV”, or <code>adb install</code>.</li>
       <li>Allow installs from unknown sources for whichever app you used.</li>
-      <li>Launch mrowser from the Android TV launcher — it registers as a Leanback app.</li>
+      <li>Launch mrowser Private from the Android TV launcher — it registers as a Leanback app and can coexist with upstream mrowser.</li>
     </ol>
-    <p>For automatic updates, add the repository to <a href="https://github.com/ImranR98/Obtainium">Obtainium</a> as an app source:</p>
-    <pre><code>https://github.com/m-salehi-v/mrowser</code></pre>
+    <p>Automatic upstream updates are disabled. Future private builds must use this variant's signing key and a private distribution channel.</p>
     <p class="note"><b>What it covers:</b> sites that stream over HLS, DASH, or a plain video file (MP4, M4V, WebM, MKV) — which is most of the streaming web. Detection reads the page's request URLs, so a site that hides its stream behind its own protocol (YouTube among them) is not handed off, and DRM/Widevine content stays in the browser by design. Both still play in the page, just without the native player.</p>
-    <p class="note">mrowser hosts, bundles, indexes and links to no content. It ships with no preset sites or bookmarks, and it does not circumvent DRM — Widevine streams stay in the WebView. Use it only to access content you are authorised to access.</p>
+    <p class="note">mrowser Private does not keep a local list of visited pages or searches. Cookies and website storage stay enabled for sign-ins and video playback; websites and external providers may still retain data or show their own suggestions. See <a href="PRIVACY.md">Privacy behavior and limits</a>. The app does not circumvent DRM — Widevine streams stay in the WebView. Use it only to access content you are authorised to access.</p>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
     <p>MIT licensed. Built on AndroidX Media3 / ExoPlayer.</p>
-    <p><a href="https://github.com/m-salehi-v/mrowser">GitHub</a> · <a href="https://github.com/m-salehi-v/mrowser/issues">Issues</a> · <a href="https://github.com/m-salehi-v/mrowser/discussions">Discussions</a> · <a href="https://github.com/m-salehi-v/mrowser/releases">Releases</a></p>
+    <p><a href="https://github.com/m-salehi-v/mrowser">Upstream source</a> · <a href="https://github.com/m-salehi-v/mrowser/issues">Upstream issues</a> · <a href="https://github.com/m-salehi-v/mrowser/discussions">Upstream discussions</a></p>
   </div>
 </footer>
 

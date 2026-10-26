@@ -26,38 +26,29 @@ import android.webkit.ServiceWorkerController
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
+import android.webkit.WebSettings
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import java.io.File
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import net.mrowser.adblock.AdBlocker
 import net.mrowser.data.DefaultFavorites
 import net.mrowser.data.DocumentPicker
 import net.mrowser.data.Favorite
 import net.mrowser.data.FavoritesBackup
 import net.mrowser.data.FavoritesBackupFile
-import net.mrowser.data.HistoryEntry
 import net.mrowser.data.JsonFavoritesStore
-import net.mrowser.data.JsonHistoryStore
 import net.mrowser.data.JsonSettingsStore
 import net.mrowser.handoff.HandoffController
 import net.mrowser.home.DestructiveButton
 import net.mrowser.home.FavoriteDialog
-import net.mrowser.home.HistoryView
 import net.mrowser.home.HomeView
 import net.mrowser.home.OverlayFocus
 import net.mrowser.home.SettingsView
 import net.mrowser.stream.SniffingWebViewClient
 import net.mrowser.stream.StreamSniffer
-import net.mrowser.update.ApkDownloader
-import net.mrowser.update.JsonUpdateStore
-import net.mrowser.update.ReleaseFetcher
-import net.mrowser.update.UpdateController
-import net.mrowser.update.UpdateDialog
 import net.mrowser.web.BrowserWebChromeClient
 import net.mrowser.web.ChromeController
 import net.mrowser.web.CursorController
@@ -85,27 +76,19 @@ class MainActivity : Activity() {
     private lateinit var adBlockCount: TextView
     private lateinit var homeView: HomeView
     private lateinit var favorites: JsonFavoritesStore
-    private lateinit var history: JsonHistoryStore
-    private lateinit var historyView: HistoryView
     private lateinit var settings: JsonSettingsStore
     private lateinit var settingsView: SettingsView
     private lateinit var externalLinks: ExternalIntentLauncher
-    private lateinit var updates: UpdateController
-    private lateinit var updateIo: ExecutorService
 
     /** One outstanding storage-permission ask at a time; see ensureStoragePermission. */
     private var pendingStoragePermission: ((Boolean) -> Unit)? = null
-
-    /** True when history was opened from the home overlay (BACK returns to home);
-     *  false when opened from the chrome bar mid-browse (BACK returns to the page). */
-    private var historyFromHome = false
 
     /** True while [showPageUrl] itself is writing the field, so the edit watcher can tell
      *  the page's URL apart from the user typing over it. */
     private var showingPageUrl = false
 
-    /** Set when a page is opened from home; clears the back-stack on its first load. */
-    private var clearHistoryOnLoad = false
+    /** Drop the previous page's in-memory WebView back stack when opening a fresh page. */
+    private var clearInMemoryNavigationOnLoad = false
     private lateinit var handoff: HandoffController
     private val uiHandler = Handler(Looper.getMainLooper())
     private val chipHideRunnable = Runnable { playChip.visibility = View.GONE }
@@ -120,7 +103,6 @@ class MainActivity : Activity() {
         urlInput = findViewById(R.id.urlInput)
         playChip = findViewById(R.id.playChip)
         homeView = findViewById(R.id.homeView)
-        historyView = findViewById(R.id.historyView)
         settingsView = findViewById(R.id.settingsView)
         val bar = findViewById<View>(R.id.chromeBar)
         val backButton = findViewById<ImageButton>(R.id.backButton)
@@ -130,22 +112,26 @@ class MainActivity : Activity() {
         adBlockIcon = findViewById(R.id.adBlockIcon)
         adBlockCount = findViewById(R.id.adBlockCount)
         val homeButton = findViewById<ImageButton>(R.id.homeButton)
-        val historyButton = findViewById<ImageButton>(R.id.historyButton)
 
         favorites = JsonFavoritesStore(File(filesDir, "favorites.json"))
-        history = JsonHistoryStore(File(filesDir, "history.json"))
         settings = JsonSettingsStore(File(filesDir, "settings.json"))
         seedDefaultFavorites()
 
-        updateIo = Executors.newSingleThreadExecutor()
-        updates = UpdateController(
-            store = JsonUpdateStore(File(filesDir, "update.json")),
-            installedVersion = installedVersion(),
-            fetch = ReleaseFetcher::fetch,
-            io = updateIo,
-            main = { task -> runOnUiThread(task) },
-            now = { System.currentTimeMillis() }
-        )
+        // Never restore the typed field or WebView page after Activity/process recreation.
+        urlInput.isSaveEnabled = false
+        webView.isSaveEnabled = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            urlInput.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            homeView.findViewById<EditText>(R.id.homeUrlInput).importantForAutofill =
+                View.IMPORTANT_FOR_AUTOFILL_NO
+            webView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            urlInput.importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO
+            homeView.findViewById<EditText>(R.id.homeUrlInput).importantForContentCapture =
+                View.IMPORTANT_FOR_CONTENT_CAPTURE_NO
+            webView.importantForContentCapture = View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
+        }
 
         adBlocker = AdBlocker(
             blockAds = { settings.get().blockAds },
@@ -185,12 +171,13 @@ class MainActivity : Activity() {
             adBlocker,
             onNavigate = { url -> updateUrlText(url) },
             onLoaded = { url ->
-                recordHistory(url, webView.title)
-                // Opening from home starts a fresh tab: drop any prior back-stack so
+                // Opening from home starts a fresh page: drop any prior in-memory back stack so
                 // BACK at this page reaches root (close-tab) instead of walking old
                 // pages / leftover about:blank entries from a previous tab.
-                if (clearHistoryOnLoad) {
-                    clearHistoryOnLoad = false
+                if (clearInMemoryNavigationOnLoad) {
+                    clearInMemoryNavigationOnLoad = false
+                    // WebView's built-in navigation list is session memory only; no app
+                    // history repository or state restoration is attached to it.
                     webView.clearHistory()
                 }
             },
@@ -202,13 +189,19 @@ class MainActivity : Activity() {
             container = layout,
             onEnter = { chrome.dismiss(); playChip.visibility = View.GONE; layout.invalidate() },
             onExit = { layout.invalidate() },
-            onTitle = { url, title -> recordHistory(url, title) },
             onPopupBlocked = { Toast.makeText(this, R.string.popup_blocked, Toast.LENGTH_SHORT).show() },
             isBlockedPopup = { url -> adBlocker.isBlockedPopup(url) },
             launchExternal = { url -> externalLinks.launch(url) }
         )
         webView.webChromeClient = chromeClient
         webView.settings.apply {
+            // Do not read prior HTTP resources from WebView's cache. Cookies and site storage
+            // remain enabled separately so login sessions and streaming sites keep working.
+            cacheMode = WebSettings.LOAD_NO_CACHE
+            @Suppress("DEPRECATION")
+            setSaveFormData(false)
+            @Suppress("DEPRECATION")
+            setSavePassword(false)
             javaScriptEnabled = true
             domStorageEnabled = true
             mediaPlaybackRequiresUserGesture = false
@@ -248,24 +241,7 @@ class MainActivity : Activity() {
             onOpen = { openUrl(it.url) },
             onSubmitUrl = { openUrl(it) },
             onEdit = { fav -> FavoriteDialog.show(this, favorites, fav) { url -> homeView.refresh(url) } },
-            onHistory = { showHistory(fromHome = true) },
-            onSettings = { showSettings() },
-            onUpdate = { release ->
-                UpdateDialog.show(this, release, ::ensureStoragePermission, ::openObtainium)
-            }
-        )
-        // Straight from the cache, so the line is there on the first frame; then once more if
-        // today's check turns something up. Once per process launch, not per home show.
-        homeView.showUpdate(updates.cachedBanner())
-        updates.checkIfDue { homeView.showUpdate(it) }
-        historyView.bind(
-            repository = history,
-            onOpen = { openUrl(it) },
-            onClear = { history.clear(); historyView.refresh() },
-            onAddFavorite = { entry ->
-                favorites.add(Favorite(entry.title, entry.url))
-                Toast.makeText(this, R.string.add_favorite, Toast.LENGTH_SHORT).show()
-            }
+            onSettings = { showSettings() }
         )
         settingsView.bind(settings) { adBlocker.list }
         settingsView.bindFavorites(onExport = ::exportFavorites, onImport = ::importFavorites)
@@ -281,7 +257,6 @@ class MainActivity : Activity() {
             chrome.onInteracted()
         }
         homeButton.setOnClickListener { showHome() }
-        historyButton.setOnClickListener { showHistory(fromHome = false) }
         favoriteButton.setOnClickListener {
             toggleCurrentFavorite()
             chrome.onInteracted()
@@ -338,19 +313,18 @@ class MainActivity : Activity() {
      *  D-pad focus (focus search can't move past it), so every transition hides all three
      *  first, then the caller shows the one it wants (or none, for openUrl). The address bar
      *  goes too: left up under an overlay, its buttons sit in the same focus search — the
-     *  capsule's right-hand cluster is level with home's History and settings buttons, so
+     *  capsule's right-hand cluster is level with home's settings button, so
      *  RIGHT from home's address field jumped behind the overlay and got pulled back. */
     private fun hideAllOverlays() {
         chrome.dismiss()
         homeView.hide()
-        historyView.hide()
         settingsView.hide()
     }
 
     private fun openUrl(url: String) {
         hideAllOverlays()
         layout.requestFocus()
-        clearHistoryOnLoad = true
+        clearInMemoryNavigationOnLoad = true
         adBlocker.onUserNavigation()
         webView.loadUrl(url)
         chrome.onPageInteracted()
@@ -374,12 +348,6 @@ class MainActivity : Activity() {
         settingsView.show()
     }
 
-    private fun showHistory(fromHome: Boolean) {
-        historyFromHome = fromHome
-        hideAllOverlays()
-        historyView.show()
-    }
-
     /** First launch only: write the shipped starter favorites. Guarded by a persisted
      *  flag rather than an is-empty check — a user who deletes them must not get them
      *  back. Existing installs have no flag in settings.json, so they seed once on upgrade.
@@ -391,19 +359,13 @@ class MainActivity : Activity() {
         settings.update(settings.get().copy(seeded = true))
     }
 
-    /** Empty when it cannot be read, which VersionCompare treats as unknown — so, no banner. */
-    private fun installedVersion(): String = try {
-        packageManager.getPackageInfo(packageName, 0).versionName ?: ""
-    } catch (e: PackageManager.NameNotFoundException) {
-        ""
-    }
-
     /**
-     * Storage is free from API 29; below it the user is asked once, and only because they tapped
-     * Download. The dialog stays ignorant of request codes — it just gets a yes or a no.
+     * Exporting favorites to Downloads needs legacy storage permission below API 29. The request
+     * is made only after the user chooses Export; the view stays ignorant of request codes.
      */
     private fun ensureStoragePermission(onResult: (Boolean) -> Unit) {
-        if (ApkDownloader.hasStoragePermission(this)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
+            checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             onResult(true)
             return
         }
@@ -498,31 +460,6 @@ class MainActivity : Activity() {
             )
         }
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-    }
-
-    /** Obtainium is the one route that ends the update problem for good; the README says so too. */
-    private fun openObtainium() {
-        ExternalIntentLauncher(
-            context = this,
-            onFallback = { url -> openUrl(url) },
-            // Without Obtainium installed this says what it is and where to get it, and stops
-            // there. It deliberately does NOT offer to open Obtainium's release page here: mrowser
-            // cannot install an APK, so that page is a dead end on a TV — the same chicken-and-egg
-            // that makes this app's own update end at "saved to Downloads".
-            onNoApp = {
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.obtainium_title)
-                    .setMessage(getString(R.string.obtainium_message, OBTAINIUM_URL))
-                    .setPositiveButton(R.string.close, null)
-                    .show()
-            }
-        ).launch(OBTAINIUM_ADD_URL)
-    }
-
-    private fun recordHistory(url: String, title: String?) {
-        if (!url.startsWith("http://") && !url.startsWith("https://")) return
-        val label = title?.takeIf { it.isNotBlank() } ?: (Uri.parse(url).host ?: url)
-        history.record(HistoryEntry(label, url, System.currentTimeMillis()))
     }
 
     private fun updateUrlText(url: String) {
@@ -630,7 +567,7 @@ class MainActivity : Activity() {
         super.onResume()
         if (::webView.isInitialized) webView.onResume()
         if (::sniffer.isInitialized && sniffer.hasStream() &&
-            homeView.visibility != View.VISIBLE && historyView.visibility != View.VISIBLE &&
+            homeView.visibility != View.VISIBLE &&
             settingsView.visibility != View.VISIBLE) showChip()
     }
 
@@ -656,12 +593,12 @@ class MainActivity : Activity() {
         // also stops a recreated Activity's service-worker fetches from being filtered by this
         // now-stale AdBlocker (stale pageHost, stale settings cache).
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) unregisterServiceWorkerAdBlock()
-        updateIo.shutdownNow()
     }
 
     /** Service-worker fetches bypass WebViewClient.shouldInterceptRequest entirely, so they need
      *  their own intercept hook. Kept out of onCreate — see the call site there. */
     private fun registerServiceWorkerAdBlock() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
         ServiceWorkerController.getInstance().setServiceWorkerClient(object : ServiceWorkerClient() {
             override fun shouldInterceptRequest(request: WebResourceRequest): WebResourceResponse? =
                 adBlocker.interceptServiceWorker(request)
@@ -670,6 +607,7 @@ class MainActivity : Activity() {
 
     /** Counterpart to [registerServiceWorkerAdBlock]; see [onDestroy]. */
     private fun unregisterServiceWorkerAdBlock() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
         ServiceWorkerController.getInstance().setServiceWorkerClient(null)
     }
 
@@ -682,13 +620,11 @@ class MainActivity : Activity() {
         if (event.action == KeyEvent.ACTION_DOWN) {
             val target = OverlayFocus.recoveryTarget(
                 settingsVisible = settingsView.visibility == View.VISIBLE,
-                historyVisible = historyView.visibility == View.VISIBLE,
                 homeVisible = homeView.visibility == View.VISIBLE,
                 focus = focusZone()
             )
             val recovered = when (target) {
                 OverlayFocus.Zone.SETTINGS -> settingsView.restoreFocus()
-                OverlayFocus.Zone.HISTORY -> historyView.restoreFocus()
                 OverlayFocus.Zone.HOME -> homeView.restoreFocus()
                 OverlayFocus.Zone.PAGE -> layout.requestFocus()
                 else -> false
@@ -704,7 +640,6 @@ class MainActivity : Activity() {
         while (v != null) {
             when (v) {
                 settingsView -> return OverlayFocus.Zone.SETTINGS
-                historyView -> return OverlayFocus.Zone.HISTORY
                 homeView -> return OverlayFocus.Zone.HOME
                 layout -> return OverlayFocus.Zone.PAGE
             }
@@ -719,11 +654,6 @@ class MainActivity : Activity() {
             settingsView.visibility == View.VISIBLE -> {
                 settingsView.hide()
                 showHome()
-            }
-            historyView.visibility == View.VISIBLE -> {
-                historyView.hide()
-                // Return to wherever history was opened from.
-                if (historyFromHome) showHome() else layout.requestFocus()
             }
             homeView.visibility == View.VISIBLE -> confirmExit()
             else -> confirmCloseTab()
@@ -758,7 +688,5 @@ class MainActivity : Activity() {
         private const val CHIP_TIMEOUT_MS = 30_000L
         private const val REQ_STORAGE = 101
         private const val REQ_IMPORT_FAVORITES = 102
-        private const val OBTAINIUM_ADD_URL = "obtainium://add/https://github.com/m-salehi-v/mrowser"
-        private const val OBTAINIUM_URL = "https://github.com/ImranR98/Obtainium"
     }
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A settings / history row: the card surface and a hairline at rest; focused, the row-focus
+<!-- A settings row: the card surface and a hairline at rest; focused, the row-focus
      fill with a soft white outline (never a white fill). -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="true">

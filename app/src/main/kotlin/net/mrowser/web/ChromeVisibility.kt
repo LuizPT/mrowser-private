@@ -9,7 +9,7 @@ object ChromeVisibility {
         data class RevealRequested(val atTop: Boolean) : Event
         data object Interacted : Event
         data object PageInteracted : Event
-        /** An overlay (home, history, settings) is opening over the page. */
+        /** An overlay (home or settings) is opening over the page. */
         data object Dismissed : Event
     }
 

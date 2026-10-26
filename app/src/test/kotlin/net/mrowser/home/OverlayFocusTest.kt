@@ -9,14 +9,12 @@ class OverlayFocusTest {
 
     private fun target(
         settings: Boolean = false,
-        history: Boolean = false,
         home: Boolean = false,
         focus: Zone
-    ) = OverlayFocus.recoveryTarget(settings, history, home, focus)
+    ) = OverlayFocus.recoveryTarget(settings, home, focus)
 
     @Test fun `focus already inside the visible overlay needs no recovery`() {
         assertNull(target(home = true, focus = Zone.HOME))
-        assertNull(target(history = true, focus = Zone.HISTORY))
         assertNull(target(settings = true, focus = Zone.SETTINGS))
     }
 
@@ -26,7 +24,6 @@ class OverlayFocusTest {
 
     @Test fun `lost focus is re-seated into the visible overlay`() {
         assertEquals(Zone.HOME, target(home = true, focus = Zone.NONE))
-        assertEquals(Zone.HISTORY, target(history = true, focus = Zone.NONE))
         assertEquals(Zone.SETTINGS, target(settings = true, focus = Zone.NONE))
     }
 
@@ -42,19 +39,16 @@ class OverlayFocusTest {
      */
     @Test fun `focus stranded on the page under a visible overlay is pulled back`() {
         assertEquals(Zone.HOME, target(home = true, focus = Zone.PAGE))
-        assertEquals(Zone.HISTORY, target(history = true, focus = Zone.PAGE))
         assertEquals(Zone.SETTINGS, target(settings = true, focus = Zone.PAGE))
     }
 
     @Test fun `focus left in a hidden overlay is pulled into the visible one`() {
-        assertEquals(Zone.HISTORY, target(history = true, focus = Zone.HOME))
         assertEquals(Zone.HOME, target(home = true, focus = Zone.SETTINGS))
     }
 
     /** Overlays are focus-modal, but keep a deterministic order if two are ever up. */
-    @Test fun `settings outranks history and home`() {
-        assertEquals(Zone.SETTINGS, target(settings = true, history = true, home = true, focus = Zone.PAGE))
-        assertEquals(Zone.HISTORY, target(history = true, home = true, focus = Zone.PAGE))
+    @Test fun `settings outranks home`() {
+        assertEquals(Zone.SETTINGS, target(settings = true, home = true, focus = Zone.PAGE))
     }
 
     @Test fun `focus left in an overlay after it closed returns to the page`() {

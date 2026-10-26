@@ -1,20 +1,27 @@
-# mrowser — Android TV Browser for Streaming Video
+# mrowser Private — Android TV Browser for Streaming Video
 
 > A sideload-only **Android TV browser** for **watching video from websites your TV has no app for**. It detects the page's video stream automatically (**HLS**, **DASH**, or a plain video file) and plays it in a proper native **Media3 / ExoPlayer** player — correct **A/V sync**, quality and audio-track selection, and **subtitles you can retime while watching** — with a **D-pad-driven virtual mouse cursor** to get you there from the remote. No Google Play Services required.
 
-<!-- Badges: update the owner/repo path once the repository is public. -->
-[![Build](https://github.com/m-salehi-v/mrowser/actions/workflows/build.yml/badge.svg)](https://github.com/m-salehi-v/mrowser/actions/workflows/build.yml)
+[![Android CI](https://github.com/LuizPT/mrowser-private/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/LuizPT/mrowser-private/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/github/v/release/m-salehi-v/mrowser?include_prereleases&sort=semver)](https://github.com/m-salehi-v/mrowser/releases)
 [![Platform: Android TV](https://img.shields.io/badge/platform-Android%20TV-success.svg)](#requirements)
+
+This independent derivative is based on the [upstream mrowser project](https://github.com/m-salehi-v/mrowser), release [`v1.4.0`](https://github.com/m-salehi-v/mrowser/tree/v1.4.0). The original MIT license and copyright notice are preserved in [LICENSE](LICENSE).
 
 ---
 
 ## What is mrowser?
 
-**mrowser** (`net.mrowser`) is a lightweight, open-source **smart TV web browser** built specifically for **Android TV** and the **D-pad remote**. Its point is **streaming video from sites the TV has no app for**: open a site, start its video, and mrowser hands the stream to a real player instead of the WebView — so a whole film stays in sync. Everything else in the app exists to make that possible from a remote.
+**mrowser Private** (`net.mrowser.private`) is a lightweight, open-source **smart TV web browser** built specifically for **Android TV** and the **D-pad remote**. Based on upstream `v1.4.0`, this independent variant keeps browsing and search terms out of the app's persistent history while preserving favorites, website sign-in sessions, and streaming.
 
-> **mrowser hosts no content and breaks no DRM.** It ships with no preset sites or bookmarks, and it only replays the standard streams (HLS, DASH, or a plain video file) that the page you are visiting has already loaded in your own browser session — DRM/Widevine-protected content stays in the WebView. See [Scope of use & disclaimer](#scope-of-use--disclaimer).
+### Differences from upstream mrowser
+
+- Visit and search history storage and screens are removed; address and search fields start blank and do not show this app's prior entries.
+- The official updater is removed so this package never proposes the upstream APK.
+- The app uses its own ID (`net.mrowser.private`) and signing certificate, so it installs alongside official mrowser.
+- Favorites, cookies and website storage, ad blocking, remote navigation, and the Media3 video pipeline remain available.
+
+> **mrowser Private hosts no content and breaks no DRM.** It only replays the standard streams (HLS, DASH, or a plain video file) that the page you are visiting has already loaded in your own browser session — DRM/Widevine-protected content stays in the WebView. See [Scope of use & disclaimer](#scope-of-use--disclaimer).
 
 ### The problem it solves
 
@@ -53,8 +60,8 @@ mrowser fixes all three:
 
 | Home screen | Native player with live subtitle sync |
 | --- | --- |
-| ![mrowser home screen — address bar, History, Settings, and a favorites grid](docs/screenshots/home.png) | ![mrowser native player showing the sub-sync box (CC + Sub Sync offset) over a playing stream](docs/screenshots/player-sub-sync.png) |
-| D-pad-friendly launcher: address bar, favorites grid, History and Settings. | Stream handed off to Media3/ExoPlayer; the top-left **sub-sync box** toggles subtitles and nudges their timing (±0.5s) live — no rebuffer. |
+| ![mrowser Private home screen — address bar, Settings, and a favorites grid](docs/screenshots/home.png) | ![mrowser Private native player showing the sub-sync box (CC + Sub Sync offset) over a playing stream](docs/screenshots/player-sub-sync.png) |
+| D-pad-friendly launcher: address bar, favorites grid, and Settings. | Stream handed off to Media3/ExoPlayer; the top-left **sub-sync box** toggles subtitles and nudges their timing (±0.5s) live — no rebuffer. |
 
 ---
 
@@ -66,7 +73,7 @@ mrowser fixes all three:
 - **Live subtitle sync** — the app renders side-loaded subtitles itself (VTT **and** SRT) so you can nudge their timing **±0.5s per press** (clamped to ±30s) **instantly, with no rebuffer** — solving the classic "subtitles are a second behind" problem ExoPlayer can't fix live.
 - **Smart subtitle labelling** — side-loaded tracks carry no language metadata, so mrowser infers a readable name (English, Persian, …) from the subtitle URL, else a generic `Subtitle N`.
 - **Home screen with favorites** — a favorites grid; add/remove the current page with the ★ button.
-- **Browsing history** — newest-first, deduplicated, with relative "Nm ago" labels; long-press to favorite.
+- **Private local browsing** — no persistent visit list or search suggestions; the WebView's back stack is kept in memory for the current browsing session.
 - **Ad blocking** — requests to ~90k known ad and pop-under hosts (OISD small + HaGeZi Pop-Up Ads, bundled and refreshed weekly) are answered with an empty stand-in, and a `window.open` or in-page redirect to one of them is refused while the page stays put. Per-site allow from the chrome bar, blocked counter, never touches the video stream itself.
 - **System browser registration** — links from other apps offer mrowser in the chooser, and one arriving while it runs navigates the page you are on instead of stacking a second browser. A link that belongs to another app (`market://`, `mailto:`, `intent://`, …) is handed to the system when you click it rather than dead-ending on the WebView's error page.
 - **Pop-up handling** — a window the user opens loads in the current window (there are no tabs) unless its destination is a known ad host; `target="_blank"` links still work and BACK returns you.
@@ -112,37 +119,21 @@ Throughout, **pure decision/parsing/geometry logic is separated from Android glu
 
 ## Installation (sideload on Android TV)
 
-mrowser is **sideload-only** — it is not on the Play Store and needs no Google Play Services.
+mrowser Private is **sideload-only** — it is not on the Play Store and needs no Google Play Services. It has its own application ID (`net.mrowser.private`) and can coexist with upstream mrowser.
 
-1. Download the latest `app-release.apk` from the [**Releases**](https://github.com/m-salehi-v/mrowser/releases) page.
+1. Build `app/build/outputs/apk/release/app-release.apk` as described below, or use a private APK supplied by its maintainer.
 2. Get the APK onto your Android TV device using any of:
    - a USB stick + a file manager app, or
    - a sideloading helper app (e.g. "Send files to TV" / "Downloader"), or
    - `adb install app-release.apk` from a computer.
 3. When prompted, allow **install from unknown sources** for the installer app.
-4. Launch **mrowser** from the Android TV launcher (it registers as a Leanback launcher app).
+4. Launch **mrowser Private** from the Android TV launcher (it registers as a Leanback launcher app).
 
 No ADB is strictly required — copying the APK to the device and opening it works.
 
-### Update notices
+### Updates
 
-mrowser checks GitHub for a new stable release once a day and, when there is one, shows a quiet
-**Update available** line at the bottom of the home screen. Opening it shows the release notes and
-a **Download** button that saves the APK to your `Downloads/` folder; install it from there with
-your file manager. Your settings, favorites and history are kept — the new APK is signed with the
-same key, so it updates in place.
-
-mrowser does not install the APK for you. Doing that requires the `REQUEST_INSTALL_PACKAGES`
-permission, and mrowser would rather not hold it. If your TV has no file manager, use Obtainium
-below — the dialog's **Automatic updates** button sets it up.
-
-### Automatic updates with Obtainium
-
-[Obtainium](https://github.com/ImranR98/Obtainium) installs apps directly from GitHub Releases and keeps them updated — no store account, no Play Services. Add mrowser as an app source with this URL:
-
-```
-https://github.com/m-salehi-v/mrowser
-```
+The upstream updater is removed from this variant. It will not query upstream GitHub or suggest an official mrowser APK. Future private updates must be distributed from a separate channel and signed with this variant's private key. Android treats the upstream app and this package as separate apps.
 
 ---
 
@@ -157,7 +148,7 @@ mrowser is driven entirely by a standard **D-pad remote** (directional pad + OK 
 | **OK long-press** | Toggle between **CURSOR** mode (free pointer) and **FOCUS** mode |
 | **D-pad held at the top / bottom edge** | Scroll — at the cursor, so an overlay or cookie dialog with its own scrollbar scrolls too |
 | **MENU** *or* **BACK long-press** | Open the chrome / address bar to type or navigate a URL. Many TV remotes (e.g. the Mi Box 4K) have no MENU key — hold BACK for 500ms instead. |
-| **BACK** (tap) | Step back: chrome bar → WebView history → "Close this page?" → home |
+| **BACK** (tap) | Step back: chrome bar → current session's WebView back stack → "Close this page?" → home |
 | **★ (favorite button)** | Add/remove the current page to favorites |
 | **Shield button** | Allow/block ads on the current site (shows a blocked-request count) |
 
@@ -170,9 +161,9 @@ In the **native player**:
 | **CC button** (sub-sync box, top-left) | Toggle subtitles on/off and pick a track |
 | **`[−]` / `[+]`** (sub-sync box) | Nudge subtitle timing by ±0.5s (live, no rebuffer) |
 
-The **home screen** offers a favorites grid, a URL entry, browsing **History**, and **Settings** (auto-open-player toggle, block-pop-ups toggle, block-ads toggle, cursor speed, and an ad-block-lists attribution row).
+The **home screen** offers a favorites grid, a blank URL entry, and **Settings** (auto-open-player toggle, block-pop-ups toggle, block-ads toggle, cursor speed, and an ad-block-lists attribution row).
 
-> For the full, authoritative control scheme and edge cases, see the milestone specs and plans in [`docs/superpowers/`](docs/superpowers/).
+See [Privacy behavior and limits](docs/PRIVACY.md) for what the app does not store, which website data remains enabled, and the limits imposed by Android, WebView, and the installed keyboard.
 
 ---
 
@@ -183,7 +174,7 @@ The **home screen** offers a favorites grid, a URL entry, browsing **History**, 
 ```bash
 ./gradlew test               # unit tests (JVM, no device needed)
 ./gradlew assembleDebug      # debug APK   -> app/build/outputs/apk/debug/
-./gradlew assembleRelease    # signed APK  -> app/build/outputs/apk/release/  (needs keystore.properties; unsigned if absent)
+./gradlew assembleRelease    # signed APK -> app/build/outputs/apk/release/ (requires the private keystore)
 ```
 
 Run a single test class:
@@ -192,7 +183,7 @@ Run a single test class:
 ./gradlew test --tests "net.mrowser.stream.MediaUrlClassifierTest"
 ```
 
-**Release signing.** Release builds read a gitignored `keystore.properties`; if absent, the release APK is produced unsigned. CI builds a **signed** APK on a published GitHub Release using the repository secrets `KEYSTORE_BASE64`, `STORE_PASSWORD`, `KEY_ALIAS`, and `KEY_PASSWORD`. See [`.github/workflows/build.yml`](.github/workflows/build.yml).
+**Release signing.** Release builds read a gitignored `keystore.properties` and use a key dedicated to `net.mrowser.private`. Keep a protected backup of the keystore and its passwords: future private updates must use the same certificate. Do not substitute the upstream signing key or official APK.
 
 ---
 
@@ -213,14 +204,14 @@ Run a single test class:
 - **Android TV** (registers as a Leanback launcher app; also runs on phones/tablets as a landscape browser)
 - **Android 6.0+** (`minSdk 23`, `targetSdk 34`)
 - **No Google Play Services** required
-- Only the **INTERNET** permission
+- **INTERNET**; legacy external-storage permission on Android 9 and earlier only when exporting favorites to Downloads
 
 ---
 
 ## FAQ
 
-**Is mrowser a free, open-source Android TV browser?**
-Yes. It is MIT-licensed and distributed only as a sideloaded APK from GitHub Releases — there is no Play Store listing and no account required.
+**Does mrowser Private keep a browsing history?**
+No. It does not save visited URLs, page titles, or search terms as browser history, and the history screen has been removed. It does keep cookies and website storage so site sessions and streaming continue to work. See [Privacy behavior and limits](docs/PRIVACY.md).
 
 **Why does it need a separate native player instead of just playing video in the browser?**
 Android TV WebViews play video with **poor A/V sync** — audio drifts out of step with the picture. mrowser detects the page's stream and plays it in a native **Media3 / ExoPlayer** activity, which keeps audio and video in sync.
@@ -266,10 +257,10 @@ Contributions are welcome. A good workflow:
 
 1. Read [`CLAUDE.md`](CLAUDE.md) and the relevant milestone plan in [`docs/superpowers/`](docs/superpowers/) before changing cursor input or the handoff pipeline — they document the intended control scheme and edge cases.
 2. Keep the **pure-logic / Android-glue split**: put decision, parsing, and geometry in plain Kotlin objects/classes (with JVM unit tests) and keep Android code thin.
-3. Run `./gradlew test` and `./gradlew assembleDebug` before opening a PR — CI runs both on every push and pull request.
+3. Run `./gradlew lint test assembleDebug assembleDebugAndroidTest` before opening a PR — CI runs lint, unit tests, and both APK builds on every push and pull request.
 4. Follow conventional-commit style messages and keep changes focused.
 
-Issues and feature requests are tracked on the GitHub [issue tracker](https://github.com/m-salehi-v/mrowser/issues).
+Issues and feature requests are tracked in this project's [issue tracker](https://github.com/LuizPT/mrowser-private/issues). For upstream mrowser, use the [upstream issue tracker](https://github.com/m-salehi-v/mrowser/issues).
 
 ---
 

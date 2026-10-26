@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">mrowser</string>
+    <string name="app_name">mrowser Private</string>
     <string name="url_hint">Enter address</string>
     <string name="go">Go</string>
     <string name="back">Back</string>
@@ -28,9 +28,6 @@
     <string name="sub_sync_value">%1$+.1fs</string>
     <string name="sub_sync_earlier">Subtitles earlier</string>
     <string name="sub_sync_later">Subtitles later</string>
-    <string name="history">History</string>
-    <string name="clear_history">Clear all</string>
-    <string name="history_empty">No history yet — sites you visit will show up here.</string>
     <string name="exit_title">Exit mrowser?</string>
     <string name="exit_message">Close the browser and return to the home screen.</string>
     <string name="exit">Exit</string>
@@ -74,19 +71,5 @@
     <string name="ads_blocked_here">Ads blocked on this site</string>
     <string name="ad_block_button">Ad blocker</string>
     <string name="ad_block_button_count">Ad blocker, %1$d blocked</string>
-    <string name="update_download_title">mrowser %1$s</string>
-    <string name="update_available">Update available — %1$s</string>
-    <string name="update_title">Update to %1$s</string>
-    <string name="update_body">%1$s\n\n%2$s</string>
-    <string name="update_download">Download</string>
-    <string name="update_obtainium">Automatic updates</string>
     <string name="close">Close</string>
-    <string name="update_downloading">Downloading… %1$s / %2$s</string>
-    <string name="update_downloading_starting">Downloading…</string>
-    <string name="update_downloading_unknown">Downloading… %1$s</string>
-    <string name="update_saved">Saved to Downloads/%1$s\n\nOpen it with your file manager to install. Your settings and favorites are kept.</string>
-    <string name="update_failed">Download failed. Try again.</string>
-    <string name="update_manual">mrowser can\'t save the file on this device.\n\nOpen this on another device:\n%1$s\n\nOr use Obtainium to keep mrowser updated for you.</string>
-    <string name="obtainium_title">Obtainium not installed</string>
-    <string name="obtainium_message">Obtainium installs apps straight from GitHub Releases and keeps them updated for you — mrowser included.\n\nmrowser can\'t install it here. Get it on a phone or computer from:\n\n%1$s</string>
 </resources>

@@ -9,7 +9,7 @@ object SubtitleFetcher {
     private const val TAG = "SubtitleFetcher"
     private const val TIMEOUT_MS = 15_000
 
-    /** Returns the body text, or null on any failure (logged, non-fatal — that track is dropped). */
+    /** Returns the body text, or null on failure (non-fatal — that track is dropped). */
     fun fetch(url: String, headers: Map<String, String>): String? = try {
         val conn = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = TIMEOUT_MS
@@ -18,8 +18,9 @@ object SubtitleFetcher {
             headers.forEach { (k, v) -> setRequestProperty(k, v) }
         }
         conn.inputStream.bufferedReader().use { it.readText() }
-    } catch (e: Exception) {
-        Log.w(TAG, "fetch failed: $url", e)
+    } catch (_: Exception) {
+        // Subtitle URLs can include signed tokens; keep them out of Android logs.
+        Log.w(TAG, "fetch failed")
         null
     }
 }

@@ -76,7 +76,7 @@ class SettingsView @JvmOverloads constructor(
         visibility = View.VISIBLE
         render()
         // Post: a synchronous requestFocus right after VISIBLE can fail before the layout
-        // pass, leaving nothing focused (matches HomeView/HistoryView).
+        // pass, leaving nothing focused (matches HomeView).
         post { restoreFocus() }
     }
 

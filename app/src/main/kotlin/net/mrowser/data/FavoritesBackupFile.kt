@@ -1,5 +1,6 @@
 package net.mrowser.data
 
+import android.annotation.TargetApi
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
@@ -38,13 +39,13 @@ object FavoritesBackupFile {
         "com.android.providers.downloads.documents", "downloads"
     )
 
-    /** Below API 29 this needs WRITE_EXTERNAL_STORAGE — see ApkDownloader.hasStoragePermission. */
+    /** Below API 29 this needs the user's WRITE_EXTERNAL_STORAGE grant for Downloads. */
     fun export(context: Context, json: String): String? = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) exportScoped(context, json)
         else exportLegacy(context, json)
     } catch (e: Exception) {
         // IOException, or a SecurityException / IllegalStateException from a stripped or
-        // operator-locked media provider — the same firmware class ApkDownloader anticipates.
+        // operator-locked media provider on some TV firmware.
         Log.w(TAG, "export failed", e)
         null
     }
@@ -77,6 +78,7 @@ object FavoritesBackupFile {
      * time. The query only ever sees files this install created, so a same-named file from
      * elsewhere still gets a suffixed sibling — the name reported is the one actually written.
      */
+    @TargetApi(Build.VERSION_CODES.Q)
     private fun exportScoped(context: Context, json: String): String {
         val resolver = context.contentResolver
         val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI

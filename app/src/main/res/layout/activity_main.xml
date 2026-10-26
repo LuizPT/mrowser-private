@@ -12,7 +12,9 @@
         <WebView
             android:id="@+id/webView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:saveEnabled="false"
+            android:importantForAutofill="noExcludeDescendants" />
 
         <!-- The capsule address bar. Left to right is also the D-pad order; the edge
              controls point their outward next-focus at themselves, so focus cannot leave the
@@ -79,10 +81,12 @@
                 android:gravity="center_vertical"
                 android:drawablePadding="8dp"
                 android:singleLine="true"
+                android:saveEnabled="false"
+                android:importantForAutofill="no"
                 android:textSize="17sp"
                 android:hint="@string/url_hint"
                 android:imeOptions="actionGo"
-                android:inputType="textUri"
+                android:inputType="textUri|textNoSuggestions"
                 android:textColor="@color/on_surface"
                 android:textColorHint="@color/hint" />
 
@@ -141,14 +145,6 @@
                     android:visibility="gone" />
             </FrameLayout>
 
-            <ImageButton
-                android:id="@+id/historyButton"
-                style="@style/Widget.Mrowser.BarIcon"
-                android:nextFocusRight="@id/historyButton"
-                android:nextFocusUp="@id/historyButton"
-                android:nextFocusDown="@id/historyButton"
-                android:src="@drawable/ic_history"
-                android:contentDescription="@string/history" />
         </LinearLayout>
 
         <!-- A capsule with an accent play button; CursorLayout hit-tests its bounds for OK. -->
@@ -176,12 +172,6 @@
         android:id="@+id/homeView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
-    <net.mrowser.home.HistoryView
-        android:id="@+id/historyView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone" />
 
     <net.mrowser.home.SettingsView
         android:id="@+id/settingsView"

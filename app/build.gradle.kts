@@ -17,11 +17,12 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "net.mrowser"
+        applicationId = "net.mrowser.private"
         minSdk = 23
         targetSdk = 34
-        versionCode = 9
-        versionName = "1.4.0"
+        versionCode = 11
+        versionName = "1.4.0-private.1"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -65,4 +66,7 @@ dependencies {
     implementation(libs.media3.ui)
     testImplementation(libs.junit)
     testImplementation(libs.json)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.junit)
 }

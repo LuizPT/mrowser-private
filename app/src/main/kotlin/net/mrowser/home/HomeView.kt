@@ -12,7 +12,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.view.inputmethod.EditorInfo
-import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.FrameLayout
@@ -21,7 +20,6 @@ import android.widget.TextView
 import net.mrowser.R
 import net.mrowser.data.Favorite
 import net.mrowser.data.FavoritesRepository
-import net.mrowser.update.Release
 import net.mrowser.web.UrlNormalizer
 
 /** Home overlay: wordmark + URL pill + favorites grid. */
@@ -33,16 +31,12 @@ class HomeView @JvmOverloads constructor(
     private val grid: GridLayout
     private val emptyHint: TextView
     private val urlInput: EditText
-    private val updateButton: Button
 
     private var repository: FavoritesRepository? = null
     private var onOpen: (Favorite) -> Unit = {}
     private var onSubmitUrl: (String) -> Unit = {}
     private var onEdit: (Favorite) -> Unit = {}
-    private var onHistory: () -> Unit = {}
     private var onSettings: () -> Unit = {}
-    private var onUpdate: (Release) -> Unit = {}
-    private var pendingUpdate: Release? = null
 
     private val backgroundDrawable =
         GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, null)
@@ -57,16 +51,16 @@ class HomeView @JvmOverloads constructor(
         urlInput = findViewById(R.id.homeUrlInput)
         urlInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_GO) {
-                UrlNormalizer.normalize(urlInput.text.toString())?.let { onSubmitUrl(it) }
+                UrlNormalizer.normalize(urlInput.text.toString())?.let {
+                    urlInput.text.clear()
+                    onSubmitUrl(it)
+                }
                 true
             } else {
                 false
             }
         }
-        findViewById<Button>(R.id.homeHistoryButton).setOnClickListener { onHistory() }
         findViewById<ImageButton>(R.id.homeSettingsButton).setOnClickListener { onSettings() }
-        updateButton = findViewById(R.id.homeUpdateButton)
-        updateButton.setOnClickListener { pendingUpdate?.let { release -> onUpdate(release) } }
     }
 
     fun bind(
@@ -74,17 +68,13 @@ class HomeView @JvmOverloads constructor(
         onOpen: (Favorite) -> Unit,
         onSubmitUrl: (String) -> Unit,
         onEdit: (Favorite) -> Unit,
-        onHistory: () -> Unit,
-        onSettings: () -> Unit,
-        onUpdate: (Release) -> Unit
+        onSettings: () -> Unit
     ) {
         this.repository = repository
         this.onOpen = onOpen
         this.onSubmitUrl = onSubmitUrl
         this.onEdit = onEdit
-        this.onHistory = onHistory
         this.onSettings = onSettings
-        this.onUpdate = onUpdate
         startIndex = HomeBackgrounds.indexFor(System.currentTimeMillis())
         background = backgroundDrawable
         applyGradient(0f)
@@ -106,6 +96,7 @@ class HomeView @JvmOverloads constructor(
     }
 
     fun show() {
+        urlInput.text.clear()
         visibility = View.VISIBLE
         refresh()
         startCycle()
@@ -169,23 +160,6 @@ class HomeView @JvmOverloads constructor(
         // the D-pad finds when it closes (#47): the moved or edited card, not the pill.
         val target = focusUrl?.let { grid.findViewWithTag<View>(it) }
         if (target?.requestFocus() != true && findFocus() == null) restoreFocus()
-    }
-
-    /**
-     * Show or hide the update line. Called twice per launch — once from the cache while laying
-     * out, once more if the daily check turns up something — so it must be idempotent.
-     */
-    fun showUpdate(release: Release?) {
-        pendingUpdate = release
-        // GONE on a focused view hands the window's focus fallback to CursorLayout, behind
-        // this overlay (#32's failure mode) — reachable here when the daily check clears a
-        // banner the user has D-padded onto. Re-seat focus if the button held it.
-        val hadFocus = updateButton.hasFocus()
-        updateButton.visibility = if (release == null) View.GONE else View.VISIBLE
-        if (release != null) {
-            updateButton.text = context.getString(R.string.update_available, release.version)
-        }
-        if (release == null && hadFocus) restoreFocus()
     }
 
     private fun card(fav: Favorite): View {
