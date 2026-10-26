@@ -7,7 +7,7 @@ This variant starts from upstream `v1.4.0` and uses the separate Android package
 - There is no visit-history repository, JSON serializer, history file, or history screen. Navigation and page-title callbacks update the currently visible address only; they do not write URLs or titles to disk or logs.
 - The WebView back/forward list is kept in the live WebView for navigation during the current session. It is not saved/restored with Android view state. Opening a fresh page from the home screen clears the previous in-memory list.
 - Both address/search fields start blank, clear after leaving/returning to the home screen, and have Android view-state saving disabled. Their input type requests that the keyboard suppress suggestions.
-- Android Autofill is excluded from the address fields and from the WebView and its descendants on Android 8.0 and later. Android Content Capture is excluded on Android 10 and later. WebView form-data/password saving is also disabled where the platform still honors those settings.
+- Android Autofill is excluded from the address fields and from the WebView and its descendants on Android 8.0 and later. Android Content Capture is excluded on Android 11 and later. WebView form-data/password saving is also disabled where the platform still honors those settings.
 - The app does not write visited URLs or page titles to preferences, logs, or its own history file. Subtitle-fetch errors are logged without the subtitle URL, which may contain a signed token.
 - The upstream release checker and updater have been removed. This app does not query the upstream GitHub release API or propose an official APK.
 
