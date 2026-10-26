@@ -48,6 +48,14 @@
                 android:contentDescription="@string/back" />
 
             <ImageButton
+                android:id="@+id/forwardButton"
+                style="@style/Widget.Mrowser.BarIcon"
+                android:nextFocusUp="@id/forwardButton"
+                android:nextFocusDown="@id/forwardButton"
+                android:src="@drawable/ic_forward"
+                android:contentDescription="@string/forward" />
+
+            <ImageButton
                 android:id="@+id/reloadButton"
                 style="@style/Widget.Mrowser.BarIcon"
                 android:nextFocusUp="@id/reloadButton"

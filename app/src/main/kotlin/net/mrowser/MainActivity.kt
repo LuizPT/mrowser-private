@@ -90,6 +90,8 @@ class MainActivity : Activity() {
     /** Drop the previous page's in-memory WebView back stack when opening a fresh page. */
     private var clearInMemoryNavigationOnLoad = false
     private lateinit var handoff: HandoffController
+    private lateinit var backButton: ImageButton
+    private lateinit var forwardButton: ImageButton
     private val uiHandler = Handler(Looper.getMainLooper())
     private val chipHideRunnable = Runnable { playChip.visibility = View.GONE }
 
@@ -105,7 +107,8 @@ class MainActivity : Activity() {
         homeView = findViewById(R.id.homeView)
         settingsView = findViewById(R.id.settingsView)
         val bar = findViewById<View>(R.id.chromeBar)
-        val backButton = findViewById<ImageButton>(R.id.backButton)
+        backButton = findViewById(R.id.backButton)
+        forwardButton = findViewById(R.id.forwardButton)
         val reloadButton = findViewById<ImageButton>(R.id.reloadButton)
         favoriteButton = findViewById(R.id.favoriteButton)
         adBlockButton = findViewById(R.id.adBlockButton)
@@ -180,6 +183,7 @@ class MainActivity : Activity() {
                     // history repository or state restoration is attached to it.
                     webView.clearHistory()
                 }
+                updateNavigationButtons()
             },
             onExternalScheme = { url -> externalLinks.launch(url) },
             onNavigationBlocked = { Toast.makeText(this, R.string.navigation_blocked, Toast.LENGTH_SHORT).show() }
@@ -250,6 +254,10 @@ class MainActivity : Activity() {
 
         backButton.setOnClickListener {
             if (webView.canGoBack()) webView.goBack()
+            chrome.onInteracted()
+        }
+        forwardButton.setOnClickListener {
+            if (webView.canGoForward()) webView.goForward()
             chrome.onInteracted()
         }
         reloadButton.setOnClickListener {
@@ -609,6 +617,11 @@ class MainActivity : Activity() {
     private fun unregisterServiceWorkerAdBlock() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
         ServiceWorkerController.getInstance().setServiceWorkerClient(null)
+    }
+
+    private fun updateNavigationButtons() {
+        backButton.isEnabled = webView.canGoBack()
+        forwardButton.isEnabled = webView.canGoForward()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

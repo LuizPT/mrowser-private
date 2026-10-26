@@ -112,7 +112,7 @@ class PrivateBrowsingInstrumentedTest {
         }
     }
 
-    @Test fun backButtonNavigatesToThePreviousPage() {
+    @Test fun backAndForwardButtonsNavigateWithinTheCurrentSession() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             val first = LocalPageServer("first origin", "First")
             val second = LocalPageServer("second origin", "Second")
@@ -121,16 +121,31 @@ class PrivateBrowsingInstrumentedTest {
                 loadPage(scenario, second)
 
                 var canGoBack = false
+                var canGoForward = true
                 scenario.onActivity { activity ->
-                    canGoBack = activity.findViewById<WebView>(R.id.webView).canGoBack()
+                    val webView = activity.findViewById<WebView>(R.id.webView)
+                    canGoBack = webView.canGoBack()
+                    canGoForward = webView.canGoForward()
+                    assertTrue(activity.findViewById<View>(R.id.backButton).isEnabled)
+                    assertFalse(activity.findViewById<View>(R.id.forwardButton).isEnabled)
                 }
                 assertTrue(canGoBack)
+                assertFalse(canGoForward)
 
                 scenario.onActivity { activity ->
                     activity.findViewById<View>(R.id.backButton).performClick()
                 }
                 assertTrue("Back returns to the prior page", await(scenario) {
                     it.findViewById<WebView>(R.id.webView).url == first.url
+                })
+                assertTrue("Forward becomes available after Back", await(scenario) {
+                    it.findViewById<View>(R.id.forwardButton).isEnabled
+                })
+                scenario.onActivity { activity ->
+                    activity.findViewById<View>(R.id.forwardButton).performClick()
+                }
+                assertTrue("Forward returns to the second page", await(scenario) {
+                    it.findViewById<WebView>(R.id.webView).url == second.url
                 })
             } finally {
                 first.close()

@@ -20,8 +20,8 @@ android {
         applicationId = "net.mrowser.private"
         minSdk = 23
         targetSdk = 34
-        versionCode = 11
-        versionName = "1.4.0-private.1"
+        versionCode = 12
+        versionName = "1.4.0-private.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
